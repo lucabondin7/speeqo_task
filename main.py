@@ -11,7 +11,6 @@ app = FastAPI()
 # Define a model for the request body
 class ChatCompletionRequest(BaseModel):
     text: str
-    max_length: int
 
 # Define a model for the Hugging Face API response
 class ChatCompletionResponse(BaseModel):
@@ -22,12 +21,11 @@ class HuggingFaceAPIKey(BaseModel):
     api_key: str
 
 
-async def call_huggingface_api(text: str, max_length: int) -> str:
+async def call_huggingface_api(text: str) -> str:
     """
     Call the Hugging Face Chat Completion API and return the generated text.
 
     :param text: The text to complete.
-    :param max_length : The maximum length for the generated text
     :return: The generated text.
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -46,7 +44,7 @@ async def call_huggingface_api(text: str, max_length: int) -> str:
 
     responses = []
     for i in range(0, 5):
-        generated_ids = model.generate(input_ids, attention_mask=attention_mask, do_sample=True, temperature=0.9, max_length=len(input_ids[0]) + max_length, pad_token_id=tokenizer.pad_token_id)
+        generated_ids = model.generate(input_ids, attention_mask=attention_mask, do_sample=True, temperature=0.9, max_length=len(input_ids[0]) + 20, pad_token_id=tokenizer.pad_token_id)
         generated_text = tokenizer.decode(generated_ids[0])
         responses.append(generated_text)
     return responses
@@ -61,6 +59,6 @@ async def chat_completion(request: ChatCompletionRequest) -> ChatCompletionRespo
     :param request: The request containing the text to complete 
     :return: The generated text.
     """
-    generated_text = await call_huggingface_api(request.text, request.max_length)
+    generated_text = await call_huggingface_api(request.text)
     return ChatCompletionResponse(completions=generated_text)
 
